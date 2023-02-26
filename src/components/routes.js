@@ -1,12 +1,14 @@
-const express = require('express');
-const quizRoutes = require('./Quiz/routes');
+const express = require("express");
+const quizRoutes = require("./Quiz/routes");
+const QuizAttemptRoutes = require("./QuizAttempt/routes");
+const { createResponse } = require("../utils");
 
 const router = express.Router(); // eslint-disable-line new-cap
 
-/** GET /health-check - Check service health */
-router.get('/health-check', (req, res) => res.send('OK'));
-
-
-router.use('/quiz', quizRoutes)
+router.use("/quiz", quizRoutes);
+router.use("/quizAttempt", QuizAttemptRoutes);
+router.get("*", function (req, res) {
+  res.status(404).json(createResponse(false, "Not found", [404]));
+});
 
 module.exports = router;

@@ -1,37 +1,84 @@
-const QuizAttempt = require('./model');
-const QuestionAttempt = require('../QuestionAttempt/model')
-const Question = require('../Question/model')
+const QuizAttempt = require("./model");
+const QuestionAttempt = require("../QuestionAttempt/model");
+const Question = require("../Question/model");
+const { createResponse } = require("../../utils");
+const { Quiz, Answer } = require("../models");
 
-function createQuizAttempt(req, res, next) {
-    QuizAttempt.create(req.body, {
-        include: [
-            {
-                association: QuizAttempt.QuestionAttempt,
-                include: [QuestionAttempt.Answer, QuestionAttempt.Question]
-            }
-        ]
-    }).then(quizAttempt => {
-        return res.json(quizAttempt)
-    }).catch(e => {
-        console.log(e)
-        next(e)
-    })
+async function createQuizAttempt(req, res, next) {
+  const quiz = await Quiz.findOne({
+    where: {
+      id: req.body.quizId,
+    },
+  });
 
-    Quiz.create(req.body, {
-        include: [
-            {
-                association: Quiz.Question,
-                include: [Question.Answer]
-            }
-        ]
-    }).then((quiz) => {
-        return res.json(quiz)
-    }).catch(e => {
-        console.log(e)
-        next(e)
+  if (quiz === null) {
+    return res
+      .status(400)
+      .json(createResponse(false, "Specified quiz does not exist", [400]));
+  }
+
+  const questionIds = req.body.questionAttempts.map((qa) => qa.questionId);
+  const answerIds = req.body.questionAttempts.map((qa) => qa.answerId);
+
+  const questions = await Question.findAll({
+    where: {
+      id: questionIds,
+    },
+  });
+
+  if (questions.length !== questionIds.length) {
+    return res
+      .status(400)
+      .json(
+        createResponse(false, "One or more question IDs does not exist.", [400])
+      );
+  }
+
+  const answers = await Answer.findAll({
+    where: {
+      id: answerIds,
+    },
+  });
+
+  if (answers.length !== answerIds.length) {
+    return res
+      .status(400)
+      .json(
+        createResponse(false, "One or more answer IDs does not exist.", [400])
+      );
+  }
+
+  const quizQuestions = await quiz.getQuestions();
+  const mandatoryQuestions = quizQuestions.filter((q) => q.isMandatory);
+
+  mandatoryQuestions.forEach((question) => {
+    if (!questionIds.includes(question.id)) {
+      return res
+        .status(400)
+        .json(
+          createResponse(false, "All mandatory questions must be answered.", [
+            400,
+          ])
+        );
+    }
+  });
+
+  QuizAttempt.create(req.body, {
+    include: [
+      {
+        association: QuizAttempt.QuestionAttempt,
+        include: [QuestionAttempt.Answer, QuestionAttempt.Question],
+      },
+    ],
+  })
+    .then((quizAttempt) => {
+      return res.json(createResponse(true, quizAttempt, []));
     })
+    .catch((e) => {
+      return res.status(500).json(createResponse(false, e.message, [500]));
+    });
 }
 
 module.exports = {
-    createQuizAttempt
-}
+  createQuizAttempt,
+};

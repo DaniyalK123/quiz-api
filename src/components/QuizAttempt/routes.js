@@ -19,4 +19,7 @@ router.post(
   quizAttemptController.createQuizAttempt
 );
 
+router.get("/:quizAttemptId", quizAttemptController.getQuizAttempt);
+router.get("/", quizAttemptController.getAllQuizAttempts);
+
 module.exports = router;

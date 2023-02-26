@@ -79,6 +79,37 @@ async function createQuizAttempt(req, res, next) {
     });
 }
 
+function getQuizAttempt(req, res) {
+  QuizAttempt.findOne({
+    where: {
+      id: req.params.quizAttemptId,
+    },
+    include: [{ model: QuestionAttempt, include: [Answer, Question] }],
+  }).then((quizAttempt) => {
+    if (quizAttempt === null) {
+      return res
+        .status(400)
+        .json(createResponse(false, "Quiz Attempt not found", [404]));
+    } else {
+      res.json(createResponse(true, quizAttempt, []));
+    }
+  });
+}
+
+function getAllQuizAttempts(req, res) {
+  QuizAttempt.findAll()
+    .then((quizAttempts) => {
+      res.json(createResponse(true, quizAttempts, []));
+    })
+    .catch((e) => {
+      return res
+        .status(500)
+        .json(createResponse(false, "An error occured", [500]));
+    });
+}
+
 module.exports = {
   createQuizAttempt,
+  getQuizAttempt,
+  getAllQuizAttempts,
 };

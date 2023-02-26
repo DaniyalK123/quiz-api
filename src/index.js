@@ -4,7 +4,7 @@ const server = require("./server");
 
 // make bluebird default Promise
 Promise = require("bluebird"); // eslint-disable-line no-global-assign
-PORT = process.env.port ? process.env.PORT : 8080;
+PORT = process.env.PORT ? process.env.PORT : 8080;
 
 server.listen(PORT, () => {
   console.log(`server started on port ${PORT}`); // eslint-disable-line no-console
